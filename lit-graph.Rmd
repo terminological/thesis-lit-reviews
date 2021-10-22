@@ -1,0 +1,155 @@
+---
+title: "Literature graph analysis"
+author: "Rob Challen"
+date: "10/09/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+here::i_am("lit-graph.Rmd")
+devtools::load_all("~/Git/standard-print-output/")
+# options(java.parameters = c("-Xmx8000m","-Xdebug","-Xrunjdwp:transport=dt_socket,address=8998,server=y"))
+devtools::load_all("~/Git/bibliographic-api-client/r-library/")
+J = biblioapi::JavaApi$new(logLevel = "info")
+api = J$ApiClient$createCached(configFile = "~/Dropbox/secrets.prop", cacheDir = here::here("cache"))
+
+api$withSearchLimit(limit = 10L)
+tmp = api$searchApis(searchTerm = "covid 19 database")
+
+```
+
+# Lifestyle models 
+
+These are pre-existing mortality models that are of relevance
+
+```{r}
+modelReferences <- readr::read_csv(here::here("input/trusted-research-environments.csv"))
+dois = modelReferences %>% select(DOI) %>% filter(!is.na(DOI))
+```
+
+
+```{r}
+repo = api$getRepository()
+repo$fetchRecords(recordDf = dois)
+repo$getRecords() %>% View()
+```
+
+
+```{r}
+
+repo$expandUpCitationGraph(limit = 100L)
+```
+
+```{r}
+repo$fetchMissingRecords()
+
+```
+
+```{r}
+citAn = repo$analyseCitations()
+tmp = citAn$pageRank()
+
+r = repo$getRecords()
+
+r2 = r %>% inner_join(tmp, by="uuid") %>% mutate(DOI2 = stringr::str_to_lower(DOI)) %>% anti_join(dois %>% mutate(DOI2 = stringr::str_to_lower(DOI)), by=c("DOI2"))
+
+r2 %>% filter(date > "2015-01-01") %>% arrange(desc(pageRank)) %>% mutate(DOI = paste0("[",DOI,"](https://www.doi.org/",DOI,")")) %>% select(citation,pageRank,DOI) %>% filter(row_number() < 40) %>% huxtable::as_hux() %>%
+  standardPrintOutput::defaultTableLayout() %>%
+  huxtable::set_markdown(row = huxtable::everywhere,col = 3) %>%
+  standardPrintOutput::saveTable(here::here("output/trusted-research-environments"),defaultFontSize = 8)
+
+
+
+```
+((Hazard ratio OR Hazard model OR Cox model OR multivariate analysis) AND (Prognostic factor OR Prognosis OR Survival OR Mortality)) AND "Prognostic index"
+((Hazard ratio OR Hazard model OR Cox model OR multivariate analysis) AND (Prognostic factor OR Prognosis OR Survival OR Mortality)) AND "Prognostic index" AND "All cause mortality"
+
+```{r}
+#cg$buildFromPropertyFile("~/Dropbox/covid19/literature/lit-graph/project.prop")
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+an = cg$analser()
+an$getQueryNames()
+
+tmp = an$executeQuery("getArticlesByPagerank")
+tmp2 = an$executeQuery("getArticleCommunityTitlesAbstracts")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+cg$shutdown()
+J$.engine$terminate()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```
+
+```{r}
+search = ""
+broaderSearch = '(Hazard ratio OR Hazard model OR Cox model OR multivariate analysis OR Prognostic factor OR Prognosis OR Survival OR Mortality) AND (smoking OR obesity OR alcohol OR hypercholesterolaemia OR "activity of daily living" OR Hypertension) AND "all-cause mortality" AND (CPRD OR QResearch OR "Health Improvement Network")' 
+earliestDate = "2015-01-01"
+latestDate = "2020-08-01"
+cg$build(search,broaderSearch,earliestDate,latestDate)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+an = cg$analser()
+an$getQueryNames()
+
+tmp = an$executeQuery("getArticlesByPagerank")
+tmp2 = an$executeQuery("getArticleCommunityTitlesAbstracts")
+```
+```{r}
+tmp %>% left_join(tmp2, by="nodeId") %>% readr::write_csv("/home/terminological/Share/Windows10/crystallise/annuity/Literature/smoking/test.csv")
+
+```
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+cg$shutdown()
+J$.engine$terminate()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+limit to 2015 to 2020
+
+
+(Hazard ratio OR Hazard model OR Cox model OR multivariate analysis OR Prognostic factor OR Prognosis OR Survival OR Mortality) AND (smoking OR obesity OR alcohol OR hypercholesterolaemia OR "activity of daily living" OR Hypertension) AND "all-cause mortality" AND (CPRD OR QResearch OR "Health Improvement Network")
+= 21
+
+(Hazard ratio OR Hazard model OR Cox model OR "Fine and Grey" OR "multivariate analysis" OR "logistic regression" OR "Kaplan Meier") AND (hypercholesterolaemia OR cholesterol OR statin) AND "all-cause mortality" AND (CPRD OR QResearch OR "Health Improvement Network")
+
+(Hazard ratio OR Hazard model OR Cox model OR "Fine and Grey" OR "multivariate analysis" OR "logistic regression" OR "Kaplan Meier") AND (hypercholesterolaemia OR cholesterol OR statin) AND "all-cause mortality"
+ = 617
+
+(Hazard ratio OR Hazard model OR Cox model OR multivariate analysis OR "Kaplan Meier") AND (smoking) AND "all-cause mortality" AND (CPRD OR QResearch OR "Health Improvement Network")
+
+
+(Hazard ratio OR Hazard model OR Cox model OR "Fine and Grey" OR "multivariate analysis" OR "logistic regression" OR "Kaplan Meier") AND (hypercholesterolaemia OR cholesterol OR statin) AND "all-cause mortality" NOT ("cardiovascular disease" OR "stroke" OR "depression")
+limit to 2015 to 2020 = 290
